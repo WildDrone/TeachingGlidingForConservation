@@ -72,6 +72,30 @@ def _next_session_index(base: Path) -> int:
                 continue
     return max_n + 1
 
+def send_status_text(mav, text, severity=6):
+    """
+    severity:
+    0 = EMERGENCY
+    1 = ALERT
+    2 = CRITICAL
+    3 = ERROR
+    4 = WARNING
+    5 = NOTICE
+    6 = INFO
+    7 = DEBUG
+    """
+    mav.mav.statustext_send(
+        severity,
+        text.encode("utf-8")
+    )
+
+def play_tune(mav, tune):
+    mav.mav.play_tune_send(
+        mav.target_system,
+        mav.target_component,
+        tune.encode("utf-8"),
+        b""
+    )
 
 def start_capture() -> None:
     global recording, proc, session_dir
@@ -126,6 +150,8 @@ def start_capture() -> None:
 
     proc = subprocess.Popen(cmd)
     recording = True
+    send_status_text(mav, "RPi CAPTURE STARTED", 5)
+    play_tune(mav, "MFT200L8>c")
     log(f"CAPTURE STARTED → {session_dir}")
 
 
@@ -142,6 +168,8 @@ def stop_capture() -> None:
 
     proc = None
     recording = False
+    send_status_text(mav, "RPi CAPTURE STOPPED", 5)
+    play_tune(mav, "MFT200L8>cc")
     if session_dir:
         log(f"CAPTURE STOPPED → {session_dir}")
     session_dir = None
@@ -153,7 +181,15 @@ def main() -> int:
     log(f"Connecting MAVLink on {SERIAL_PORT} @ {BAUDRATE}...")
     mav = mavutil.mavlink_connection(SERIAL_PORT, baud=BAUDRATE)
 
-    hb = mav.wait_heartbeat(timeout=10)
+    while True:
+        try:
+            hb = mav.wait_heartbeat(timeout=10)
+            print("MAVLink connected.")
+            break
+        except Exception as e:
+            print(f"MAVLink not ready yet ({e}). Retrying in 5s...")
+            time.sleep(5)
+
     if not hb:
         log("ERROR: No heartbeat. Check FC SERIAL port settings and wiring.")
         return 1
