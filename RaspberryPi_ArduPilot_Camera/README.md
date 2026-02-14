@@ -112,8 +112,6 @@ chmod +x /home/wilddrone/camera_trigger_rc8.py
 
 ## Script Configuration (from code)
 
-Key parameters inside the script:
-
 ```python
 SERIAL_PORT = "/dev/serial0"
 BAUDRATE = 115200
@@ -128,7 +126,9 @@ HEIGHT = 1080
 JPEG_QUALITY = 90
 ```
 
-Capture runs continuously using `rpicam-still` (timelapse mode). Images are written using a numbered pattern:
+Capture runs continuously using `rpicam-still` (timelapse mode).
+
+Images are written using:
 
 ```
 img_000001.jpg
@@ -138,7 +138,7 @@ img_000002.jpg
 
 Safety behaviour:
 
-- If MAVLink is silent for more than 5 seconds, capture is stopped.
+- If MAVLink silence exceeds 5 seconds, capture is stopped.
 
 ---
 
@@ -197,15 +197,9 @@ sudo systemctl enable ku-camera.service
 sudo systemctl start ku-camera.service
 ```
 
-Check status:
-
-```bash
-sudo systemctl status ku-camera.service
-```
-
 ---
 
-## Flight Controller Setup (ArduPilot – Mission Planner)
+# Flight Controller Setup (ArduPilot – Mission Planner)
 
 This assumes the Raspberry Pi is connected to **Telem 2** on Pixhawk 6C.
 
@@ -214,6 +208,10 @@ Telem 2 corresponds to:
 ```
 SERIAL5
 ```
+
+---
+
+## 1) Configure MAVLink Port
 
 In Mission Planner:
 
@@ -231,27 +229,64 @@ Write parameters and reboot the flight controller.
 
 ---
 
-## RC Channel Setup
+## 2) Move Flight Mode Selection to RC7
 
-Assign a switch to:
+By default, flight mode selection is often assigned to RC8.
+
+To use RC8 for Raspberry Pi triggering, move flight mode control to RC7.
+
+In:
+
+**Config → Full Parameter List**
+
+Set:
 
 ```
-RC8
+FLTMODE_CH = 7
 ```
 
-Verify in Mission Planner:
+Write parameters and reboot.
+
+---
+
+## 3) Free RC8 for Raspberry Pi Trigger
+
+Ensure RC8 is not assigned to any ArduPilot internal function.
+
+In:
+
+**Config → Full Parameter List**
+
+Set:
+
+```
+RC8_OPTION = 0
+```
+
+Write parameters.
+
+---
+
+## 4) Verify Channel Behaviour
+
+Go to:
 
 **Config → Radio Calibration**
 
-Typical ranges:
+Confirm:
 
-- OFF ≈ 1000–1200
-- ON  ≈ 1800–2000
+- RC7 changes flight modes
+- RC8 does NOT change flight mode
+- RC8 values range approximately:
+  - OFF ≈ 1000–1200
+  - ON  ≈ 1800–2000
 
-Script thresholds:
+The script thresholds are:
 
-- ON when **RC8 > 1700**
-- OFF when **RC8 < 1300**
+```
+ON  when RC8 > 1700
+OFF when RC8 < 1300
+```
 
 ---
 
@@ -259,7 +294,15 @@ Script thresholds:
 
 1. Power flight controller  
 2. Power Raspberry Pi  
-3. Confirm MAVLink connection in script output  
+3. Confirm MAVLink connection  
 4. Flip RC8 ON → capture starts  
 5. Flip RC8 OFF → capture stops  
 6. Inspect the latest session folder for images  
+
+---
+
+## Final Channel Allocation
+
+- **RC7** → Flight Mode Selection  
+- **RC8** → Raspberry Pi Camera Trigger  
+- **Telem 2 (SERIAL5)** → MAVLink to Raspberry Pi  
