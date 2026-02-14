@@ -23,7 +23,7 @@ camera_trigger_rc8.py
 ## System Architecture
 
 ```
-RC → ArduPilot → MAVLink (Telem2 / SERIAL5) → Raspberry Pi → Camera → Storage
+RC → ArduPilot → MAVLink (TELEM2 / SERIAL2) → Raspberry Pi → Camera → Storage
 ```
 
 ---
@@ -35,13 +35,13 @@ RC → ArduPilot → MAVLink (Telem2 / SERIAL5) → Raspberry Pi → Camera → 
 - Raspberry Pi Camera (IMX219 tested)
 - UART wiring between FC and Pi
 
-### UART Wiring
+### UART Wiring (TELEM2)
 
-| Pixhawk | Raspberry Pi |
-|----------|--------------|
-| TX       | GPIO15 (RX)  |
-| RX       | GPIO14 (TX)  |
-| GND      | GND          |
+| Pixhawk (TELEM2) | Raspberry Pi |
+|------------------|--------------|
+| TX               | GPIO15 (RX)  |
+| RX               | GPIO14 (TX)  |
+| GND              | GND          |
 
 Baud rate: **115200**
 
@@ -201,17 +201,17 @@ sudo systemctl start ku-camera.service
 
 # Flight Controller Setup (ArduPilot – Mission Planner)
 
-This assumes the Raspberry Pi is connected to **Telem 2** on Pixhawk 6C.
+This setup assumes the Raspberry Pi is connected to **TELEM2** on Pixhawk 6C.
 
-Telem 2 corresponds to:
+TELEM2 corresponds to:
 
 ```
-SERIAL5
+SERIAL2
 ```
 
 ---
 
-## 1) Configure MAVLink Port
+## 1) Configure MAVLink Port (SERIAL2)
 
 In Mission Planner:
 
@@ -220,8 +220,8 @@ In Mission Planner:
 Set:
 
 ```
-SERIAL5_PROTOCOL = 2
-SERIAL5_BAUD     = 115
+SERIAL2_PROTOCOL = 2
+SERIAL2_BAUD     = 115
 BRD_SER2_RTSCTS  = 0
 ```
 
@@ -305,4 +305,4 @@ OFF when RC8 < 1300
 
 - **RC7** → Flight Mode Selection  
 - **RC8** → Raspberry Pi Camera Trigger  
-- **Telem 2 (SERIAL5)** → MAVLink to Raspberry Pi  
+- **TELEM2 (SERIAL2)** → MAVLink to Raspberry Pi  
